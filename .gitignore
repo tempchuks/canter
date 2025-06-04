@@ -1,7 +1,9 @@
 *
 !.gitignore
-!src
+!src/
 !src/*.html
 
 !src/*.js
 !*.html
+!blog/
+!public/

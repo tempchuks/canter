@@ -1,0 +1,30 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+header{
+    display: flex;
+    justify-content: space-between;
+    margin: 1rem;
+   
+}
+
+header div{
+    display: flex;
+    align-items: center;
+}
+
+header li{
+    width: 200px;
+    display: flex;
+    list-style: none;
+    justify-content: space-evenly;
+    
+}
+
+header li a {
+    text-decoration: none;
+    font-size: 20px;
+}

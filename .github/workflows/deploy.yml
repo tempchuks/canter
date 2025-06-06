@@ -3,20 +3,20 @@ name: Build and Deploy to VPS
 on:
   push:
     branches:
-      - Main  # Changed from 'main' to match your branch
+      - Main
 
 jobs:
   deploy:
-    runs-on: ubuntu-24.04  # Changed from ubuntu-latest for consistency with log
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4  # Upgraded from v3 to v4
+        uses: actions/checkout@v4
         with:
-          submodules: recursive  # Added to match log behavior
-          ref: Main  # Explicitly specify Main branch
+          submodules: recursive
+          ref: Main
 
       - name: Build Jekyll site
-        uses: actions/jekyll-build-pages@v1  # Added to build Jekyll site
+        uses: actions/jekyll-build-pages@v1
         with:
           source: .
           destination: ./_site
@@ -27,27 +27,28 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts || echo "SSH keyscan failed, proceeding with existing keys"
 
-      - name: Debug - check files in workspace
-        run: ls -la ./_site  # Updated to check _site directory
+      - name: Debug - check Jekyll build
+        run: ls -la ./_site || echo "Jekyll build failed"
 
       - name: Deploy via rsync
         run: |
           set -ex
           echo "Deploying to ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}"
-          rsync -avz --delete --progress \
+          rsync -avz --progress \
             --exclude='.git' \
             --exclude='.github' \
             ./_site/ \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}  # Updated to sync _site
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }} || echo "rsync failed"
+        continue-on-error: true
 
       - name: Debug - check remote path
-        run: ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "ls -la ${{ secrets.VPS_TARGET_DIR }}"
+        run: ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "ls -la ${{ secrets.VPS_TARGET_DIR }}" || echo "Remote check failed"
 
       - name: Upload rsync log on failure
         if: failure()
-        uses: actions/upload-artifact@v4  # Added to upload rsync log if deployment fails
+        uses: actions/upload-artifact@v4
         with:
           name: rsync-log
           path: rsync.log

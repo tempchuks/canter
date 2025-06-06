@@ -3,7 +3,7 @@ name: Deploy to VPS
 on:
   push:
     branches:
-      - main  
+      - main
 
 jobs:
   deploy:
@@ -20,10 +20,18 @@ jobs:
         chmod 600 ~/.ssh/id_ed25519
         ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
 
-    - name: Verify files before deploy
-      run: ls -l
+    - name: Debug - check files in workspace
+      run: ls -la
 
     - name: Deploy via rsync
       run: |
-        rsync -avz --delete ./ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}/
-        
+        set -ex
+        echo "Deploying to ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}"
+        rsync -avz --delete --progress \
+          --exclude='.git' \
+          --exclude='.github' \
+          ./ \
+          ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_TARGET_DIR }}
+
+    - name: Debug - check remote path
+      run: ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "ls -la ${{ secrets.VPS_TARGET_DIR }}"
